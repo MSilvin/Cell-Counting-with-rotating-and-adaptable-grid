@@ -3,14 +3,25 @@
  * silvinm@igbmc.fr & grandgie@igbmc.fr
  * May 2021
  * 
- * 
- * Open .lif serie, create ROI
+ * Cell counting on brain sections
+ * Data: .lif files
+ * Dimension: 2 channels, Z-stack
+ * Label: DAPI and GFP
  * 
  * Requirement:
- * 	- 
+ * 	- Fiji (ImageJ) version 1.53i or more recent
+ * 	- .lif files
+ * 	- source folder and output folder
  * 	
  * How to use:
- *  - 
+ *  - 1rst method: 
+ *  	Drag&Drop in Fiji
+ *  	Click on "run"
+ *  - 2nd method:
+ *  	Copy paste the macro file in 	C:\...\Fiji.app\macros
+ *  	In Fiji, click on Plugins > Macros > Install...
+ *  	Restart Fiji
+ *  	The macro is now in Plugins > Macros > CellCount_Brain
  * 	
 */
 
@@ -62,9 +73,8 @@ function processFile(fileToProcess){
 		fileNameWithoutExtension = File.nameWithoutExtension;
 		name=File.getName(seriesName);
 
-		
-		//print(fileNameWithoutExtension);
-		//MIP
+
+		//Max Intensity Projection
 		run("Z Project...", "projection=[Sum Slices]");
 		
 		roiManager("reset");	//reset ROIManager
@@ -73,12 +83,14 @@ function processFile(fileToProcess){
 		makeRotatedRectangle(100, 100, 100, 100, 300);
 		waitForUser("select your rectangle Area");
 
+		//saving of the rectangle draw on the source image
 		roiManager("Add");
 		roiManager("Save", dir2+ name + "-ROI.zip");
 		roiManager("reset");
-		
 
+		//duplicate with only the channel of interest 
 		run("Duplicate...", "title=ROI duplicate channels=1");
+		//divide the large ROI in sub-ROI
 		nb = sections;
 		W = getWidth();
 		H = getHeight();
@@ -91,28 +103,30 @@ function processFile(fileToProcess){
 		}
 		roiManager("show all");
 
+		//Image treatment (Top Hat, Gaussian blur, Find Maxima)
+		//to better discriminate all the cells
 		run("Top Hat...", "radius=2");
 		run("Gaussian Blur...", "sigma=1");
 		run("Find Maxima...", "prominence=10 output=[Single Points]");
 
+		//Rename ROI to numerotate it
 		for (z = 0 ; z < roiManager("count") ; z++) {
 		     roiManager("select", z);
 		     nameROI= "ROI";
 		     roiManager( "Rename", name + "-" + nameROI + z );
 				}
 
-	
+		//Measure Integrated Density on maxima image
 		selectWindow("ROI Maxima");
 		roiManager("Show All with labels");
 		roiManager("Measure");
 		close("ROI");
 		close("ROI Maxima");
-		//waitForUser("Gabuzomeuh");
 		//run("Close");
-
-
 	}
-	
+
+
+	//suppress "MaximaROI:" at the beginning of labels
 	for (i=0; i<nResults; i++) {
 		oldLabel = getResultLabel(i);
 		delimiter = indexOf(oldLabel, ":");
@@ -120,16 +134,20 @@ function processFile(fileToProcess){
 		setResult("Label", i, newLabel);
   		}
 
-  	
+  	//transform result of "Measure" in total count of cells
+  	//Because “RawIntDen” is the sum of the values of the pixels in the image or selection
 	IJ.renameResults("Results"); // otherwise below does not work...
 	for (row=0; row<nResults; row++) {
 		counting = getResult("RawIntDen", row) / 255;
 	    setResult("Cell Count", row, counting);
 	}
+
+	//suppress value that we don't need
 	Table.deleteColumn("IntDen");
 	Table.deleteColumn("RawIntDen");
 	updateResults();
-  	
+
+  	//saving in a table format that can be open in Excel
 	saveAs("Results", dir2+ "Results of "+ fileNameWithoutExtension +".csv");
 	run("Clear Results");
 	
@@ -140,6 +158,7 @@ close("Results");
 print("\\Clear");
 
 
+//saving the crop composite image with ROI on it
 function saveOverview(fileToProcess){
 	path=dir1+fileToProcess;
 	Ext.setId(path);
@@ -155,12 +174,12 @@ function saveOverview(fileToProcess){
 		name=File.getName(seriesName);
 
 		run("Z Project...", "projection=[Sum Slices]");
-		run("Make Composite");
-		close("\\Others");
-		roiManager("Open", dir2+ name + "-ROI.zip");
+		run("Make Composite");		//create a composite image (twwo channels merged)
+		close("\\Others");		//close the source image
+		roiManager("Open", dir2+ name + "-ROI.zip");		//open the ROI set corresponding
 		roiManager("Select", 0);
 		
-		run("Duplicate...", "title=Overview duplicate");
+		run("Duplicate...", "title=Overview duplicate");		//recreate the crop
 		nb = sections;
 		W = getWidth();
 		H = getHeight();
@@ -171,14 +190,15 @@ function saveOverview(fileToProcess){
 		               makeRectangle(i*bounding, 0 , bounding, H);
 		               roiManager("add");
 		}
+		//suppress the global ROI
 		roiManager("Select", 0);
 		roiManager("delete");
 		roiManager("show all");
-		//waitForUser("Overlay??");
+		//Create an overlay and save it
 		run("From ROI Manager");
 		saveAs("PNG", dir2 + name + "-OverviewROI.png");
 		roiManager("reset");
-		//waitForUser;
+
 	}
 
 
