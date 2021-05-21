@@ -42,6 +42,7 @@ run("Set Measurements...", "integrated display redirect=None decimal=3");
 for (i = 0; i < list.length; i++) {
 		sections = sections;
 		processFile(list[i]);
+		saveOverview(list[i]);
 }
 
 
@@ -137,6 +138,48 @@ function processFile(fileToProcess){
 close("*");
 close("Results");
 print("\\Clear");
+
+
+function saveOverview(fileToProcess){
+	path=dir1+fileToProcess;
+	Ext.setId(path);
+	Ext.getCurrentFile(fileToProcess);
+	Ext.getSeriesCount(seriesCount); // this gets the number of series
+	print("Processing the file = " + fileToProcess);
+	roiManager("reset");
+	for (j=0; j<seriesCount; j++) {
+    	Ext.setSeries(j);
+        Ext.getSeriesName(seriesName);
+		run("Bio-Formats Importer", "open=&path color_mode=Default view=Hyperstack stack_order=XYCZT series_"+j+1); 
+		fileNameWithoutExtension = File.nameWithoutExtension;
+		name=File.getName(seriesName);
+
+		run("Z Project...", "projection=[Sum Slices]");
+		run("Make Composite");
+		close("\\Others");
+		roiManager("Open", dir2+ name + "-ROI.zip");
+		roiManager("Select", 0);
+		
+		run("Duplicate...", "title=Overview duplicate");
+		nb = sections;
+		W = getWidth();
+		H = getHeight();
+		bounding= (W/nb);
+		bounding = round(bounding);
+		selectWindow("Overview");
+		for (i = 0;  i< nb; i++) {
+		               makeRectangle(i*bounding, 0 , bounding, H);
+		               roiManager("add");
+		}
+		roiManager("Select", 0);
+		roiManager("delete");
+		roiManager("show all");
+		//waitForUser("Overlay??");
+		run("From ROI Manager");
+		saveAs("PNG", dir2 + name + "-OverviewROI.png");
+		roiManager("reset");
+		//waitForUser;
+	}
 
 
 showMessage("--Process finished--");
