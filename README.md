@@ -2,7 +2,7 @@
  Macro created for counting GFP-stained cells in brain. Acquisition from a confocal microscope.
  
  
- ##Goal of this macro
+ ## Goal of this macro
  The goal of this macro is to count cells on a brain sections on which we put a grid with division.
  Number of divisions can be adaptated in function of how many the user wants.
  
