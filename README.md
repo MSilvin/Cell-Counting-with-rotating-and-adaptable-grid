@@ -12,13 +12,14 @@
  And we obtain a PNG image of the crop with all the labelled ROI on it to see which part of the brain section corresponds to each ROI.
  
  
-  ## Requirement:
+ ## Requirement
 - Fiji (ImageJ) version 1.53i or more recent
 - .lif files
 - source folder and output folder
 	
  
- ##Installation
+ 
+ ## Installation
 - 1rst method: 
 		Drag&Drop in Fiji
 		Click on "run"
