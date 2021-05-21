@@ -29,12 +29,21 @@ list = getFileList(dir1);
 setBatchMode(false);
 
 
+//Choose number of divisions in the global ROI area
+Dialog.create("Number of sections?");
+Dialog.addNumber("numbers of sections", 10);
+Dialog.show();
+sections = Dialog.getNumber();
+
+//Parameters given by "Measure" - here: "Integrated Density"
 run("Set Measurements...", "integrated display redirect=None decimal=3");
 
 // PROCESS LIF FILES
 for (i = 0; i < list.length; i++) {
+		sections = sections;
 		processFile(list[i]);
 }
+
 
 
 /// Requires run("Bio-Formats Macro Extensions");
@@ -44,7 +53,6 @@ function processFile(fileToProcess){
 	Ext.getCurrentFile(fileToProcess);
 	Ext.getSeriesCount(seriesCount); // this gets the number of series
 	print("Processing the file = " + fileToProcess);
-	// see http://imagej.1557.x6.nabble.com/multiple-series-with-bioformats-importer-td5003491.html
 
 	for (j=0; j<seriesCount; j++) {
     	Ext.setSeries(j);
@@ -52,23 +60,25 @@ function processFile(fileToProcess){
 		run("Bio-Formats Importer", "open=&path color_mode=Default view=Hyperstack stack_order=XYCZT series_"+j+1); 
 		fileNameWithoutExtension = File.nameWithoutExtension;
 		name=File.getName(seriesName);
-	
-		setResult("Name of the image", j, name);
+
+		
 		//print(fileNameWithoutExtension);
 		//MIP
 		run("Z Project...", "projection=[Sum Slices]");
-
+		
 		roiManager("reset");	//reset ROIManager
 		
 		setTool("rotrect");		//create a rectangle that can be rotated
 		makeRotatedRectangle(100, 100, 100, 100, 300);
 		waitForUser("select your rectangle Area");
 
+		roiManager("Add");
+		roiManager("Save", dir2+ name + "-ROI.zip");
+		roiManager("reset");
+		
+
 		run("Duplicate...", "title=ROI duplicate channels=1");
-		Dialog.create("Number of sections?");
-		Dialog.addNumber("numbers of sections", 10);
-		Dialog.show();
-		nb = Dialog.getNumber();
+		nb = sections;
 		W = getWidth();
 		H = getHeight();
 		bounding= (W/nb);
@@ -83,24 +93,51 @@ function processFile(fileToProcess){
 		run("Top Hat...", "radius=2");
 		run("Gaussian Blur...", "sigma=1");
 		run("Find Maxima...", "prominence=10 output=[Single Points]");
-		
-		for (i =0 ; i < roiManager("count") ; i++) {
-		     roiManager("select", i);
-		     nameROI= "ROI";
-		     roiManager( "Rename", nameROI + i );
-		}
 
+		for (z = 0 ; z < roiManager("count") ; z++) {
+		     roiManager("select", z);
+		     nameROI= "ROI";
+		     roiManager( "Rename", name + "-" + nameROI + z );
+				}
+
+	
 		selectWindow("ROI Maxima");
 		roiManager("Show All with labels");
 		roiManager("Measure");
 		close("ROI");
 		close("ROI Maxima");
 		//waitForUser("Gabuzomeuh");
-		run("Close");
+		//run("Close");
+
+
 	}
+	
+	for (i=0; i<nResults; i++) {
+		oldLabel = getResultLabel(i);
+		delimiter = indexOf(oldLabel, ":");
+		newLabel = substring(oldLabel, delimiter+1);
+		setResult("Label", i, newLabel);
+  		}
+
+  	
+	IJ.renameResults("Results"); // otherwise below does not work...
+	for (row=0; row<nResults; row++) {
+		counting = getResult("RawIntDen", row) / 255;
+	    setResult("Cell Count", row, counting);
+	}
+	Table.deleteColumn("IntDen");
+	Table.deleteColumn("RawIntDen");
+	updateResults();
+  	
 	saveAs("Results", dir2+ "Results of "+ fileNameWithoutExtension +".csv");
 	run("Clear Results");
-
+	
   }
+ 
+close("*");
+close("Results");
+print("\\Clear");
 
+
+showMessage("--Process finished--");
 }
