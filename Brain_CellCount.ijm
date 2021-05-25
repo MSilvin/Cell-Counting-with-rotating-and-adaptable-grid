@@ -128,10 +128,8 @@ function processFile(fileToProcess){
         	run("Close");
 		}
 
-		
 	}
 			
-
 
 	//suppress "MaximaROI:" at the beginning of labels
 	for (i=0; i<nResults; i++) {
