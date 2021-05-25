@@ -1,4 +1,4 @@
-/* Marine SILVIN & Erwan Grandgirard
+/* Marine SILVIN & Erwan GRANDGIRARD
  * Imaging Centre IGBMC
  * silvinm@igbmc.fr & grandgie@igbmc.fr
  * May 2021
@@ -122,8 +122,15 @@ function processFile(fileToProcess){
 		roiManager("Measure");
 		close("ROI");
 		close("ROI Maxima");
-		//run("Close");
+
+		while (nImages()>0) {
+        	selectImage(nImages());  
+        	run("Close");
+		}
+
+		
 	}
+			
 
 
 	//suppress "MaximaROI:" at the beginning of labels
