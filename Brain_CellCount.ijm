@@ -87,6 +87,7 @@ function processFile(fileToProcess){
 		roiManager("Add");
 		roiManager("Save", dir2+ name + "-ROI.zip");
 		roiManager("reset");
+		wait(20);
 
 		//duplicate with only the channel of interest 
 		run("Duplicate...", "title=ROI duplicate channels=1");
@@ -106,8 +107,11 @@ function processFile(fileToProcess){
 		//Image treatment (Top Hat, Gaussian blur, Find Maxima)
 		//to better discriminate all the cells
 		run("Top Hat...", "radius=2");
+		wait(20);
 		run("Gaussian Blur...", "sigma=1");
+		wait(20);
 		run("Find Maxima...", "prominence=10 output=[Single Points]");
+		wait(20);
 
 		//Rename ROI to numerotate it
 		for (z = 0 ; z < roiManager("count") ; z++) {
@@ -122,6 +126,7 @@ function processFile(fileToProcess){
 		roiManager("Measure");
 		close("ROI");
 		close("ROI Maxima");
+		wait(20);
 
 		while (nImages()>0) {
         	selectImage(nImages());  
@@ -137,6 +142,7 @@ function processFile(fileToProcess){
 		delimiter = indexOf(oldLabel, ":");
 		newLabel = substring(oldLabel, delimiter+1);
 		setResult("Label", i, newLabel);
+		wait(20);
   		}
 
   	//transform result of "Measure" in total count of cells
@@ -155,6 +161,7 @@ function processFile(fileToProcess){
   	//saving in a table format that can be open in Excel
 	saveAs("Results", dir2+ "Results of "+ fileNameWithoutExtension +".csv");
 	run("Clear Results");
+	wait(20);
 	
   }
  
@@ -181,19 +188,23 @@ function saveOverview(fileToProcess){
 		run("Z Project...", "projection=[Sum Slices]");
 		run("Make Composite");		//create a composite image (twwo channels merged)
 		close("\\Others");		//close the source image
+		wait(20);
 		roiManager("Open", dir2+ name + "-ROI.zip");		//open the ROI set corresponding
 		roiManager("Select", 0);
 		
 		run("Duplicate...", "title=Overview duplicate");		//recreate the crop
+		wait(20);
 		nb = sections;
 		W = getWidth();
 		H = getHeight();
 		bounding= (W/nb);
 		bounding = round(bounding);
+		wait(20);
 		selectWindow("Overview");
 		for (i = 0;  i< nb; i++) {
 		               makeRectangle(i*bounding, 0 , bounding, H);
 		               roiManager("add");
+		               wait(20);
 		}
 		//suppress the global ROI
 		roiManager("Select", 0);
@@ -202,10 +213,11 @@ function saveOverview(fileToProcess){
 		//Create an overlay and save it
 		run("From ROI Manager");
 		saveAs("PNG", dir2 + name + "-OverviewROI.png");
+		wait(20);
 		roiManager("reset");
 
 	}
 
 
-showMessage("--Process finished--");
+showMessage("-- File : " + fileNameWithoutExtension + " processed --");
 }
