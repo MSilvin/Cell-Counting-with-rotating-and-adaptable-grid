@@ -72,6 +72,8 @@ function processFile(fileToProcess){
 		run("Bio-Formats Importer", "open=&path color_mode=Default view=Hyperstack stack_order=XYCZT series_"+j+1); 
 		fileNameWithoutExtension = File.nameWithoutExtension;
 		name=File.getName(seriesName);
+		name2=replace(name, ".", " ");
+		//print(name);
 
 
 		//Max Intensity Projection
@@ -89,6 +91,8 @@ function processFile(fileToProcess){
 		roiManager("reset");
 		wait(20);
 
+
+
 		//duplicate with only the channel of interest 
 		run("Duplicate...", "title=ROI duplicate channels=1");
 		//divide the large ROI in sub-ROI
@@ -104,6 +108,7 @@ function processFile(fileToProcess){
 		}
 		roiManager("show all");
 
+
 		//Image treatment (Top Hat, Gaussian blur, Find Maxima)
 		//to better discriminate all the cells
 		run("Top Hat...", "radius=2");
@@ -113,17 +118,23 @@ function processFile(fileToProcess){
 		run("Find Maxima...", "prominence=10 output=[Single Points]");
 		wait(20);
 
+
 		//Rename ROI to numerotate it
 		for (z = 0 ; z < roiManager("count") ; z++) {
 		     roiManager("select", z);
 		     nameROI= "ROI";
-		     roiManager( "Rename", name + "-" + nameROI + z );
+		     roiManager( "Rename", name2 + "-" + nameROI + z );
 				}
+		wait(50);
+
 
 		//Measure Integrated Density on maxima image
 		selectWindow("ROI Maxima");
 		roiManager("Show All with labels");
+		wait(50);
+		
 		roiManager("Measure");
+		wait(50);
 		close("ROI");
 		close("ROI Maxima");
 		wait(20);
@@ -134,7 +145,7 @@ function processFile(fileToProcess){
 		}
 
 	}
-			
+
 
 	//suppress "MaximaROI:" at the beginning of labels
 	for (i=0; i<nResults; i++) {
@@ -144,6 +155,7 @@ function processFile(fileToProcess){
 		setResult("Label", i, newLabel);
 		wait(20);
   		}
+
 
   	//transform result of "Measure" in total count of cells
   	//Because “RawIntDen” is the sum of the values of the pixels in the image or selection
